@@ -1,82 +1,95 @@
 
 // Grafico de pizza com os eletrodomésticos que mais consomem energia em tempo real
 import React from 'react';
-import { View, Text, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
+import { Dimensions } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
 
-const TopDevicesPieChart = () => {
-    const rawData = [
-        { name: 'Geladeira', consumption: 35, color: '#00C853' },
-        { name: 'Ar-condicionado', consumption: 25, color: '#1E88E5' },
-        { name: 'Máquina de Lavar', consumption: 15, color: '#FFC107' },
-        { name: 'Forno Elétrico', consumption: 10, color: '#E53935' },
-        { name: 'Outros', consumption: 15, color: '#9E9E9E' },
-    ];
+const greenShades = [
+    '#00C853', // Verde vibrante
+    '#2E7D32', // Verde escuro
+    '#A5D6A7', // Verde claro
+    '#66BB6A', // Verde médio
+    '#1B5E20', // Verde bem escuro
+    '#81C784', // Verde suave
+    '#388E3C', // Verde profundo
+    '#4CAF50', // Verde folha
+    '#69F0AE', // Verde menta
+    '#43A047', // Verde grama
+];
 
-    const total = rawData.reduce((acc, curr) => acc + curr.consumption, 0);
+export default function TopDevicesPieChart({ appliances }) {
+    const totalConsumption = appliances.reduce(
+        (total, appliance) => total + parseFloat(appliance.consumption),
+        0
+    );
 
-    const data = rawData.map((item) => ({
-        name: item.name,
-        percentage: ((item.consumption / total) * 100).toFixed(1),
-        consumption: item.consumption,
-        color: item.color,
-    }));
-
-    const chartData = data.map((item) => ({
-        name: item.name,
-        consumption: item.consumption,
-        color: item.color,
-        legendFontColor: '#000', // desnecessário, mas exigido pela lib
-        legendFontSize: 12,
+    const chartData = appliances.map((appliance, index) => ({
+        population: parseFloat(appliance.consumption), // remove name
+        color: greenShades[index % greenShades.length],
     }));
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Consumo por Eletrodoméstico (Tempo Real)</Text>
+        <View style={styles.chartWrapper}>
+            {appliances.length === 0 ? (
+                <Text style={styles.emptyText}>Nenhum dispositivo conectado ainda.</Text>
+            ) : (
+                <>
+                    <PieChart
+                        data={chartData}
+                        width={screenWidth - 80}
+                        height={250}
+                        chartConfig={{
+                            backgroundColor: '#fff',
+                            backgroundGradientFrom: '#fff',
+                            backgroundGradientTo: '#fff',
+                            decimalPlaces: 2,
+                            color: () => '#00C853',
+                            labelColor: () => '#333',
+                        }}
+                        accessor="population"
+                        backgroundColor="transparent"
+                        paddingLeft="80"
+                        absolute
+                        hasLegend={false} // ESSENCIAL para ocultar bolinha de legenda
+                    />
 
-            <PieChart
-                data={chartData}
-                width={screenWidth - 80}
-                height={250}
-                chartConfig={{ color: () => `#000` }}
-                accessor={'consumption'}
-                backgroundColor={'transparent'}
-                paddingLeft={'80'}
-                hasLegend={false}
-                absolute
-            />
-
-            <View style={styles.legendContainer}>
-                {data.map((item, index) => (
-                    <View key={index} style={styles.legendItem}>
-                        <View style={[styles.colorBox, { backgroundColor: item.color }]} />
-                        <Text style={styles.legendText}>
-                            {item.name} - {item.percentage}%
-                        </Text>
+                    <View style={styles.legendContainer}>
+                        {appliances.map((item, index) => {
+                            const percent = ((parseFloat(item.consumption) / totalConsumption) * 100).toFixed(1);
+                            return (
+                                <View key={index} style={styles.legendItem}>
+                                    <View style={[styles.colorBox, { backgroundColor: greenShades[index % greenShades.length] }]} />
+                                    <Text style={styles.legendText}>
+                                        {item.name}: {parseFloat(item.consumption).toFixed(2)} kWh ({percent}%)
+                                    </Text>
+                                </View>
+                            );
+                        })}
                     </View>
-                ))}
-            </View>
+                </>
+            )}
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
-    container: {
+    chartWrapper: {
         alignItems: 'center',
-        marginVertical: 20,
     },
-    title: {
-        fontWeight: 'bold',
-        fontSize: 18,
-        marginBottom: 10,
+    emptyText: {
         textAlign: 'center',
+        color: '#888',
+        fontStyle: 'italic',
+        paddingVertical: 20,
     },
     legendContainer: {
         marginTop: 15,
         width: '100%',
         paddingHorizontal: 20,
+        alignItems: 'flex-start',
     },
     legendItem: {
         flexDirection: 'row',
@@ -84,15 +97,14 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     colorBox: {
-        width: 14,
-        height: 14,
+        width: 12,
+        height: 12,
+        borderRadius: 2,
         marginRight: 8,
-        borderRadius: 3,
     },
     legendText: {
-        fontSize: 14,
+        fontSize: 12,
+        paddingRight: 100,
         color: '#333',
     },
 });
-
-export default TopDevicesPieChart;

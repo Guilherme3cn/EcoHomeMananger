@@ -1,127 +1,139 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, Modal, TextInput, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Image,
+  Modal,
+  TextInput,
+  ScrollView,
+} from 'react-native';
 import ConsumptionChart from '../components/ConsumptionChart';
 import TopDevicesPieChart from '../components/TopDevicesPieChart';
-
-// Lista de ícones disponíveis
-const iconOptions = [
-  require('../assets/fridge.png'),
-  require('../assets/ar.png'),
-  require('../assets/televisao.png'),
-  require('../assets/microondas.png'),
-  require('../assets/maquina.png'),
-];
+import applianceIcons from '../utils/applianceIcons.js'; // Supondo que você tenha um arquivo com os ícones dos eletrodomésticos
 
 export default function DashboardScreen() {
   const [appliances, setAppliances] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newName, setNewName] = useState('');
   const [newConsumption, setNewConsumption] = useState('');
-  const [selectedIcon, setSelectedIcon] = useState(iconOptions[0]);
+  const [selectedIcon, setSelectedIcon] = useState(null);
+
+  const openModal = () => {
+    setModalVisible(true);
+    setNewName('');
+    setNewConsumption('');
+    setSelectedIcon(null);
+  };
 
   const addAppliance = () => {
-    if (newName && newConsumption) {
-      const newItem = {
-        id: Date.now().toString(),
-        name: newName,
-        consumption: newConsumption + ' kWh',
-        icon: selectedIcon,
-      };
-      setAppliances([...appliances, newItem]);
-      setNewName('');
-      setNewConsumption('');
-      setSelectedIcon(iconOptions[0]);
-      setModalVisible(false);
-    }
+    if (!newName || !newConsumption || !selectedIcon) return;
+
+    const newAppliance = {
+      id: Date.now().toString(),
+      name: newName,
+      consumption: parseFloat(newConsumption),
+      icon: selectedIcon,
+    };
+
+    setAppliances([...appliances, newAppliance]);
+    setModalVisible(false);
   };
+
+  const deleteAppliance = (id) => {
+    setAppliances(appliances.filter(item => item.id !== id));
+  };
+
+  const totalConsumption = appliances.reduce((total, item) => total + item.consumption, 0);
 
   const renderAppliance = ({ item }) => (
     <View style={styles.applianceBox}>
       <Image source={item.icon} style={styles.applianceIcon} />
-      <View>
+      <View style={styles.applianceInfo}>
         <Text style={styles.applianceName}>{item.name}</Text>
-        <Text style={styles.applianceConsumption}>{item.consumption}</Text>
+        <Text style={styles.applianceConsumption}>{item.consumption} kWh</Text>
       </View>
+      <TouchableOpacity onPress={() => deleteAppliance(item.id)}>
+        <Text style={styles.deleteText}>🗑️</Text>
+      </TouchableOpacity>
     </View>
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>EcoHome Manager</Text>
 
       <View style={styles.consumptionBox}>
         <Text style={styles.consumptionLabel}>Consumo Atual</Text>
-        <Text style={styles.consumptionValue}>3.7 kWh</Text>
+        <Text style={styles.consumptionValue}>{totalConsumption.toFixed(2)} kWh</Text>
       </View>
 
       <Text style={styles.sectionTitle}>Eletrodomésticos Conectados</Text>
-      {appliances.length === 0 ? (
-        <Text style={{ textAlign: 'center', color: '#666', marginBottom: 20 }}>Nenhum dispositivo adicionado.</Text>
-      ) : (
-        <FlatList
-          data={appliances}
-          renderItem={renderAppliance}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-        />
-      )}
 
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+      <FlatList
+        data={appliances}
+        renderItem={renderAppliance}
+        keyExtractor={(item) => item.id}
+        style={styles.applianceList}
+        scrollEnabled={false}
+      />
+
+      <TouchableOpacity style={styles.addButton} onPress={openModal}>
         <Text style={styles.addButtonText}>+ Adicionar Dispositivo</Text>
       </TouchableOpacity>
 
-      {/* Gráfico de pizza */}
       <View style={styles.graphPlaceholder}>
-        <TopDevicesPieChart />
+        <TopDevicesPieChart appliances={appliances} />
       </View>
 
-      {/* Gráficos adicionais */}
+      <Text style={styles.graphText}>Gráficos de Consumo</Text>
       <ConsumptionChart tipo="diario" />
       <ConsumptionChart tipo="semanal" />
       <ConsumptionChart tipo="mensal" />
-      <Text style={styles.graphText}>Gráficos de Consumo</Text>
 
-      {/* Modal de Adição */}
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+      {/* Modal para adicionar novo eletrodoméstico */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Novo Dispositivo</Text>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Adicionar Dispositivo</Text>
             <TextInput
-              placeholder="Nome"
+              placeholder="Nome do dispositivo"
+              style={styles.input}
               value={newName}
               onChangeText={setNewName}
-              style={styles.input}
             />
             <TextInput
               placeholder="Consumo (kWh)"
+              style={styles.input}
+              keyboardType="numeric"
               value={newConsumption}
               onChangeText={setNewConsumption}
-              keyboardType="numeric"
-              style={styles.input}
             />
 
-            <Text style={{ fontWeight: 'bold', marginTop: 10 }}>Escolher Ícone:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
-              {iconOptions.map((icon, index) => (
+            <Text style={styles.iconLabel}>Escolha um ícone:</Text>
+            <ScrollView horizontal style={styles.iconScroll}>
+              {applianceIcons.map((iconObj, index) => (
                 <TouchableOpacity
                   key={index}
-                  onPress={() => setSelectedIcon(icon)}
+                  onPress={() => setSelectedIcon(iconObj.source)}
                   style={[
                     styles.iconOption,
-                    selectedIcon === icon && styles.selectedIcon,
+                    selectedIcon === iconObj.source && styles.selectedIcon,
                   ]}
                 >
-                  <Image source={icon} style={{ width: 40, height: 40 }} />
+                  <Image source={iconObj.source} style={styles.iconImage} />
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                <Text style={styles.cancelText}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={addAppliance} style={styles.saveButton}>
-                <Text style={styles.saveButtonText}>Salvar</Text>
+              <TouchableOpacity onPress={addAppliance} style={styles.confirmButton}>
+                <Text style={styles.confirmText}>Adicionar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -133,23 +145,21 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#e0f5e8',
     padding: 20,
+    backgroundColor: '#e0f5e8',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
     textAlign: 'center',
-    color: '#333',
+    marginBottom: 20,
   },
   consumptionBox: {
     backgroundColor: '#fff',
-    borderRadius: 12,
     padding: 20,
-    marginBottom: 20,
+    borderRadius: 12,
     alignItems: 'center',
+    marginBottom: 20,
     elevation: 3,
   },
   consumptionLabel: {
@@ -164,7 +174,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    marginVertical: 10,
+    marginBottom: 10,
+  },
+  applianceList: {
+    marginBottom: 20,
   },
   applianceBox: {
     flexDirection: 'row',
@@ -180,12 +193,18 @@ const styles = StyleSheet.create({
     height: 40,
     marginRight: 15,
   },
+  applianceInfo: {
+    flex: 1,
+  },
   applianceName: {
     fontSize: 16,
     fontWeight: 'bold',
   },
   applianceConsumption: {
     color: '#666',
+  },
+  deleteText: {
+    fontSize: 18,
   },
   addButton: {
     backgroundColor: '#00C853',
@@ -204,73 +223,72 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     elevation: 3,
-    margin: 5,
+    marginBottom: 20,
   },
   graphText: {
     fontSize: 16,
-    color: '#888',
-    marginBottom: 20,
-    textAlign: 'center',
+    fontWeight: '600',
+    marginBottom: 10,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: '#000000aa',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     padding: 20,
   },
-  modalContent: {
+  modalContainer: {
     backgroundColor: '#fff',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 20,
+    elevation: 5,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#aaa',
     borderRadius: 8,
     padding: 10,
-    marginVertical: 8,
+    marginBottom: 10,
+  },
+  iconLabel: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  iconScroll: {
+    marginBottom: 10,
   },
   iconOption: {
-    padding: 5,
     marginRight: 10,
     borderRadius: 8,
-    backgroundColor: '#f1f1f1',
+    padding: 5,
+  },
+  iconImage: {
+    width: 40,
+    height: 40,
   },
   selectedIcon: {
-    borderWidth: 2,
-    borderColor: '#00C853',
+    backgroundColor: '#c8f7dc',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 15,
   },
   cancelButton: {
-    backgroundColor: '#ccc',
     padding: 10,
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 10,
   },
-  cancelButtonText: {
-    textAlign: 'center',
-    fontWeight: 'bold',
+  cancelText: {
+    color: '#888',
   },
-  saveButton: {
-    backgroundColor: '#00C853',
+  confirmButton: {
     padding: 10,
-    borderRadius: 8,
-    flex: 1,
   },
-  saveButtonText: {
-    textAlign: 'center',
-    color: '#fff',
+  confirmText: {
+    color: '#00C853',
     fontWeight: 'bold',
   },
 });
