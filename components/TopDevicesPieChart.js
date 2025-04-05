@@ -1,51 +1,60 @@
 
 // Grafico de pizza com os eletrodomésticos que mais consomem energia em tempo real
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Dimensions, StyleSheet } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 
 const screenWidth = Dimensions.get('window').width;
 
 const TopDevicesPieChart = () => {
-    const data = [
-        { name: 'Geladeira', consumption: 35, color: '#228B22' },
-        { name: 'Ar-condicionado', consumption: 25, color: '#3CB371' },
-        { name: 'Máquina de Lavar', consumption: 15, color: '#32CD32' },
-        { name: 'Forno Elétrico', consumption: 10, color: '#00FF00' },
-        { name: 'Outros', consumption: 15, color: '#7FFF00' },
+    const rawData = [
+        { name: 'Geladeira', consumption: 35, color: '#00C853' },
+        { name: 'Ar-condicionado', consumption: 25, color: '#1E88E5' },
+        { name: 'Máquina de Lavar', consumption: 15, color: '#FFC107' },
+        { name: 'Forno Elétrico', consumption: 10, color: '#E53935' },
+        { name: 'Outros', consumption: 15, color: '#9E9E9E' },
     ];
+
+    const total = rawData.reduce((acc, curr) => acc + curr.consumption, 0);
+
+    const data = rawData.map((item) => ({
+        name: item.name,
+        percentage: ((item.consumption / total) * 100).toFixed(1),
+        consumption: item.consumption,
+        color: item.color,
+    }));
+
+    const chartData = data.map((item) => ({
+        name: item.name,
+        consumption: item.consumption,
+        color: item.color,
+        legendFontColor: '#000', // desnecessário, mas exigido pela lib
+        legendFontSize: 12,
+    }));
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>
-                Consumo por Eletrodoméstico (Tempo Real)
-            </Text>
+            <Text style={styles.title}>Consumo por Eletrodoméstico (Tempo Real)</Text>
 
-            <PieChart // Grafixo de pizza
-                data={data.map(item => ({
-                    name: item.name,
-                    consumption: item.consumption,
-                    color: item.color,
-
-
-                }))}
-                width={screenWidth - 100}
-                paddingLeft='70'
+            <PieChart
+                data={chartData}
+                width={screenWidth - 80}
                 height={250}
-                chartConfig={{
-                    color: () => `#FFFAFA`,
-                }}
-                accessor="consumption"
-                backgroundColor="transparent"
-                hasLegend={false} //  DESATIVA LEGENDAS DO LADO DIREITO
+                chartConfig={{ color: () => `#000` }}
+                accessor={'consumption'}
+                backgroundColor={'transparent'}
+                paddingLeft={'80'}
+                hasLegend={false}
                 absolute
             />
 
-            <View style={styles.legendaContainer}>
+            <View style={styles.legendContainer}>
                 {data.map((item, index) => (
-                    <View key={index} style={styles.legendaItem}>
-                        <View style={[styles.colorIndicator, { backgroundColor: item.color }]} />
-                        <Text style={styles.legendaTexto}>{item.name}</Text>
+                    <View key={index} style={styles.legendItem}>
+                        <View style={[styles.colorBox, { backgroundColor: item.color }]} />
+                        <Text style={styles.legendText}>
+                            {item.name} - {item.percentage}%
+                        </Text>
                     </View>
                 ))}
             </View>
@@ -55,7 +64,7 @@ const TopDevicesPieChart = () => {
 
 const styles = StyleSheet.create({
     container: {
-        alignItems: 'flex-start',
+        alignItems: 'center',
         marginVertical: 20,
     },
     title: {
@@ -64,22 +73,23 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         textAlign: 'center',
     },
-    legendaContainer: {
-        marginTop: 20,
+    legendContainer: {
+        marginTop: 15,
         width: '100%',
+        paddingHorizontal: 20,
     },
-    legendaItem: {
+    legendItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 5,
+        marginBottom: 6,
     },
-    colorIndicator: {
+    colorBox: {
         width: 14,
         height: 14,
+        marginRight: 8,
         borderRadius: 3,
-        marginRight: 10,
     },
-    legendaTexto: {
+    legendText: {
         fontSize: 14,
         color: '#333',
     },
