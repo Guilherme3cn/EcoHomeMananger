@@ -9,9 +9,9 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
-import ConsumptionChart from '../components/ConsumptionChart';
-import TopDevicesPieChart from '../components/TopDevicesPieChart';
-import applianceIcons from '../utils/applianceIcons.js'; // Supondo que você tenha um arquivo com os ícones dos eletrodomésticos
+import ConsumptionChart from '../assets/components/ConsumptionChart.js'; // Importando o gráfico de consumo
+import TopDevicesPieChart from '../assets/components/TopDevicesPieChart.js'; // Importando o gráfico de dispositivos
+import applianceIcons from '../utils/applianceIcons.js'; // Importando os ícones dos eletrodomésticos
 import styles from '../src/styles/DashboardScreen.styles.js'; // Importando os estilos do DashboardScreen
 
 
